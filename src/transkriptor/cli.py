@@ -24,11 +24,47 @@ app = typer.Typer(
 console = Console()
 log = logging.getLogger(__name__)
 
+TITLE = "transkriptor"
+TAGLINE = "Turn audio + video into searchable text."
+
 BANNER = r"""
-┏┳┓┏┓┏┓┏┓┏┓┓┏┏┓┏┓┳┓
- ┃ ┣┫┃┓┗┓┃ ┣┫┣┫┃┃┣┫
- ┻ ┛┗┗┛┗┛┗┛┛┗┛┗┗┛┗┛
-"""
+ _                                 _       _
+| |_ _ __ __ _ _ __  ___  ___ _ __(_)_ __ | |_ ___  _ __
+| __| '__/ _` | '_ \/ __|/ _ \ '__| | '_ \| __/ _ \| '__|
+| |_| | | (_| | | | \__ \  __/ |  | | |_) | || (_) | |
+ \__|_|  \__,_|_| |_|___/\___|_|  |_| .__/ \__\___/|_|
+                                     |_|
+""".strip("\n")
+
+
+def _max_line_len(s: str) -> int:
+    lines = s.splitlines() or [""]
+    return max(len(line) for line in lines)
+
+
+def print_banner() -> None:
+    # Panel width should fit banner + title/subtitle if possible.
+    desired = max(_max_line_len(BANNER), len(TITLE), len(TAGLINE)) + 4  # borders/padding
+    width = min(console.size.width, desired)
+
+    # If the terminal is too narrow for the subtitle, drop it instead of truncating.
+    subtitle = TAGLINE if width >= (len(TAGLINE) + 4) else None
+
+    console.print(
+        Panel(
+            BANNER,
+            title=TITLE,
+            subtitle=subtitle,
+            expand=False,
+            width=width,
+            padding=(0, 1),
+            border_style="cyan",
+        )
+    )
+
+    if subtitle is None:
+        console.print(f"[dim]{TAGLINE}[/dim]")
+
 
 # -----------------------------------------------------------------------------
 # Typer parameter specs (module-level singletons to satisfy Ruff B008)
@@ -123,9 +159,7 @@ def run(
         if not p.exists():
             raise TranskriptorError(f"Path does not exist: {p}")
 
-        console.print(
-            Panel.fit(BANNER, title="transkriptor", subtitle="GPU-first transcription pipeline")
-        )
+        print_banner()
 
         gpu_ids = _parse_csv_ids(settings.gpus) if settings.gpus else detect_gpu_ids()
         if not gpu_ids:
