@@ -11,7 +11,7 @@ from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, T
 
 from .utils import TranskriptorError, normalize_path, require_bins
 
-__all__ = ["ChunkSpec", "workdir_for", "split_to_chunks"]
+__all__ = ["ChunkSpec", "workdir_for", "split_to_chunks", "cleanup_workdir"]
 
 
 @dataclass(frozen=True)
@@ -234,3 +234,22 @@ def split_to_chunks(
 
     _write_meta(wd, want)
     return chunks
+
+
+def cleanup_workdir(workdir: Path, policy: str) -> None:
+    """
+    policy:
+      - "none": keep chunks + per-chunk json
+      - "json": delete per-chunk json only
+      - "all": delete chunks + per-chunk json
+    """
+    if policy == "none":
+        return
+
+    if policy in ("json", "all"):
+        for p in workdir.glob("chunk_*.whisper.json"):
+            p.unlink(missing_ok=True)
+
+    if policy == "all":
+        for p in workdir.glob("chunk_*.wav"):
+            p.unlink(missing_ok=True)

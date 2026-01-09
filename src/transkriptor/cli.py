@@ -7,11 +7,13 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 
-from .chunking import ChunkSpec, split_to_chunks
+from .chunking import ChunkSpec, cleanup_workdir, split_to_chunks, workdir_for
 from .config import apply_overrides, load_settings
+from .export import merge_chunks, write_whisper_json
 from .logging_setup import setup_logging
 from .media import discover_media
 from .probe import ffprobe_info
+from .transcribe import TranscribeTask, transcribe_tasks
 from .utils import (
     TranskriptorError,
     detect_gpu_ids,
@@ -100,6 +102,10 @@ OPT_RESPLIT = typer.Option(
     False, "--resplit", help="Recreate WAV chunks even if they already exist."
 )
 
+OPT_RETRANSCRIBE = typer.Option(
+    False, "--retranscribe", help="Redo chunk transcriptions even if JSON exists."
+)
+
 
 def _parse_csv_ids(s: str) -> list[str]:
     ids = [x.strip() for x in s.split(",") if x.strip()]
@@ -131,6 +137,7 @@ def run(
     write_txt: bool | None = OPT_WRITE_TXT,
     cleanup: str | None = OPT_CLEANUP,
     resplit: bool = OPT_RESPLIT,
+    retranscribe: bool = OPT_RETRANSCRIBE,
 ) -> None:
     """
     Run a transcription job.
@@ -231,6 +238,91 @@ def run(
             chunk_seconds=settings.chunk_seconds,
             sample_rate=settings.sample_rate,
             channels=settings.channels,
+        )
+        log.info(
+            "Chunking stage: %ds chunks @ %d Hz, %d ch",
+            spec.chunk_seconds,
+            spec.sample_rate,
+            spec.channels,
+        )
+
+        # Build jobs: per-file workdir + chunks
+        jobs_list: list[tuple[Path, Path]] = []  # (media_path, workdir)
+        transcribe_q: list[TranscribeTask] = []
+
+        for m in media:
+            info = ffprobe_info(m.path)
+            if not info.ok or not info.has_audio or info.duration_s <= 0:
+                continue
+
+            wd = workdir_for(m.path, settings.workdir_name)
+            chunks = split_to_chunks(
+                media_path=m.path,
+                workdir_name=settings.workdir_name,
+                spec=spec,
+                duration_s=info.duration_s,
+                force=resplit,
+            )
+
+            # Queue per-chunk transcription tasks
+            for wav in chunks:
+                out_json = wav.with_suffix(".whisper.json")
+                if out_json.exists() and not retranscribe:
+                    continue
+                transcribe_q.append(TranscribeTask(wav_path=wav, out_json_path=out_json))
+
+            jobs_list.append((m.path, wd))
+            log.info("Chunks: %s -> %d", m.path.name, len(chunks))
+
+        if not jobs_list:
+            raise TranskriptorError("No valid media jobs after chunking.")
+
+        log.info("Chunks queued for transcription: %d", len(transcribe_q))
+
+        # Transcription stage (multi-GPU)
+        if transcribe_q:
+            transcribe_tasks(
+                tasks=transcribe_q,
+                gpu_ids=gpu_ids,
+                jobs=workers,
+                model_name=settings.model,
+                language=settings.language,
+                compute_type=settings.compute_type,
+                vad=settings.vad,
+                beam_size=settings.beam_size,
+            )
+            log.info("Transcription stage: OK")
+        else:
+            log.info("Transcription stage: nothing to do (all chunk JSON exists)")
+
+        # Merge + export stage (per media file)
+        for media_path, wd in jobs_list:
+            segments = merge_chunks(wd, settings.chunk_seconds)
+            if not segments:
+                log.warning("No segments for %s (skipping export)", media_path.name)
+                continue
+
+            out_base = media_path.with_suffix("")
+            if settings.write_srt:
+                write_srt(segments, out_base.with_suffix(".srt"))
+            if settings.write_vtt:
+                write_vtt(segments, out_base.with_suffix(".vtt"))
+            if settings.write_txt:
+                write_txt(segments, out_base.with_suffix(".txt"))
+            if settings.write_json:
+                write_whisper_json(
+                    segments,
+                    out_base.with_suffix(".whisper.json"),
+                    source=media_path,
+                    model=settings.model,
+                    language=settings.language,
+                )
+
+            cleanup_workdir(wd, settings.cleanup)
+            log.info("Exported: %s", media_path.name)
+
+        log.info(
+            "Status: transcription + export OK. Next milestone is nicer progress + GPU telemetry."
         )
 
         log.info(
