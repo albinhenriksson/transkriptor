@@ -152,24 +152,39 @@ def run(
 
         media = discover_media(p, settings.exclude)
         if not media:
-            raise TranskriptorError("No media files found (after filtering).")
+            raise TranskriptorError("No files found (after filtering).")
 
-        log.info("Discovered media files: %d", len(media))
+        log.info("Discovered files (candidates): %d", len(media))
 
-        # Probe (ffprobe) to validate inputs and get durations.
+        valid = 0
         bad = 0
+        unprobeable = 0
         total_dur = 0.0
+
         for m in media:
             info = ffprobe_info(m.path)
+
+            if not info.ok:
+                unprobeable += 1
+                continue
+
             if not info.has_audio or info.duration_s <= 0:
                 bad += 1
                 continue
+
+            valid += 1
             total_dur += info.duration_s
 
+        if unprobeable:
+            log.info("Skipped %d files (ffprobe couldn't read).", unprobeable)
         if bad:
-            log.warning("Skipped %d files (no audio stream or zero duration).", bad)
+            log.info("Skipped %d files (no audio stream or zero duration).", bad)
 
-        log.info("Total duration (valid media): %.1f minutes", total_dur / 60.0)
+        if valid == 0:
+            raise TranskriptorError("No valid media-with-audio files found.")
+
+        log.info("Valid media files: %d", valid)
+        log.info("Total duration (valid): %.1f minutes", total_dur / 60.0)
 
         log.info(
             "Status: discovery + ffprobe OK. Next milestone is chunking + multi-GPU transcription."
