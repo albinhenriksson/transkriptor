@@ -9,7 +9,21 @@ from rich.panel import Panel
 
 from .chunking import ChunkSpec, cleanup_workdir, split_to_chunks, workdir_for
 from .config import apply_overrides, load_settings
-from .export import merge_chunks, write_whisper_json
+from .export import (
+    merge_chunks,
+)
+from .export import (
+    write_srt as export_srt,
+)
+from .export import (
+    write_txt as export_txt,
+)
+from .export import (
+    write_vtt as export_vtt,
+)
+from .export import (
+    write_whisper_json as export_whisper_json,
+)
 from .logging_setup import setup_logging
 from .media import discover_media
 from .probe import ffprobe_info
@@ -304,13 +318,13 @@ def run(
 
             out_base = media_path.with_suffix("")
             if settings.write_srt:
-                write_srt(segments, out_base.with_suffix(".srt"))
+                export_srt(segments, out_base.with_suffix(".srt"))
             if settings.write_vtt:
-                write_vtt(segments, out_base.with_suffix(".vtt"))
+                export_vtt(segments, out_base.with_suffix(".vtt"))
             if settings.write_txt:
-                write_txt(segments, out_base.with_suffix(".txt"))
+                export_txt(segments, out_base.with_suffix(".txt"))
             if settings.write_json:
-                write_whisper_json(
+                export_whisper_json(
                     segments,
                     out_base.with_suffix(".whisper.json"),
                     source=media_path,
