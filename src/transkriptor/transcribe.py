@@ -155,11 +155,7 @@ def transcribe_tasks(
     total = len(tasks_list)
     done = 0
     failed = 0
-    fatal: str | None = None
-
-    total = len(tasks_list)
-    done = 0
-    failed = 0
+    fail_details: list[str] = []
     fatal: str | None = None
 
     want_telemetry = telemetry and nvml_available() and bool(gpu_ids)
@@ -208,7 +204,7 @@ def transcribe_tasks(
             return Group(progress, build_gpu_table())
         return Group(progress)
 
-    with Live(render(), refresh_per_second=6, transient=True) as live:
+    with Live(render(), refresh_per_second=6, transient=False) as live:
         while done + failed < total and fatal is None:
             now = monotonic()
 
@@ -230,6 +226,7 @@ def transcribe_tasks(
                 progress.update(prog_task, advance=1)
             elif kind == "fail":
                 failed += 1
+                fail_details.append(payload)
                 progress.update(prog_task, advance=1, detail=f"[red]{payload}[/red]")
             elif kind == "fatal":
                 fatal = str(payload)
@@ -245,6 +242,9 @@ def transcribe_tasks(
         raise TranskriptorError(f"Fatal worker error: {fatal}")
 
     if failed:
+        tail = "\n".join(fail_details[:50])
+        more = "" if len(fail_details) <= 50 else f"\n... ({len(fail_details) - 50} more)"
         raise TranskriptorError(
-            f"{failed} chunk(s) failed transcription. Fix and rerun with --retranscribe."
+            f"{failed} chunk(s) failed transcription.\n\n{tail}{more}\n\n"
+            "Fix and rerun with --retranscribe."
         )
