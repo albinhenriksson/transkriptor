@@ -2,6 +2,22 @@
 
 Make your media library searchable: scan folders, split audio, transcribe in parallel across NVIDIA GPUs, then export subtitles and searchable text next to each original file.
 
+## Screenshots
+
+Here’s what a real run looks like on a multi-GPU box: chunking with FFmpeg, parallel transcription workers, and live GPU telemetry.
+
+<img src="docs/screenshots/02-transcribing.png" width="900" alt="Ljudanteckning transcribing chunks across multiple NVIDIA GPUs with live telemetry." />
+
+<details>
+  <summary>More screenshots</summary>
+
+  <p><strong>Chunking stage</strong></p>
+  <img src="docs/screenshots/01-chunking.png" width="900" alt="Ljudanteckning chunking audio using FFmpeg." />
+
+  <p><strong>Finished outputs next to media</strong></p>
+  <img src="docs/screenshots/03-finished.png" width="900" alt="Ljudanteckning finished run showing exported subtitles and transcript files next to media." />
+</details>
+
 ## Goals
 
 - Recursively discover media files (audio + video)
@@ -42,24 +58,6 @@ If you have multiple GPUs available, it can run several transcription workers in
 nvidia-smi
 ```
 If that command works and your GPUs show up, you’re ready to run GPU-accelerated transcription.
-
-## Screenshots
-
-Here’s what a real run looks like on a multi-GPU box: chunking with FFmpeg, parallel transcription workers, and live GPU telemetry.
-
-### Multi-GPU transcription + live telemetry (the fun part)
-<img src="docs/screenshots/02-transcribing.png" width="900" alt="Ljudanteckning transcribing chunks across multiple NVIDIA GPUs with live telemetry." />
-
-<details>
-  <summary>More screenshots</summary>
-
-  <p><strong>Chunking stage</strong></p>
-  <img src="docs/screenshots/01-chunking.png" width="900" alt="Ljudanteckning chunking audio using FFmpeg." />
-
-  <p><strong>Finished outputs next to media</strong></p>
-  <img src="docs/screenshots/03-finished.png" width="900" alt="Ljudanteckning finished run showing exported subtitles and transcript files next to media." />
-</details>
-
 
 ## Install (developer setup)
 
