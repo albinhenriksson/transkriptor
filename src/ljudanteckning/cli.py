@@ -30,7 +30,7 @@ from .media import discover_media
 from .probe import ffprobe_info
 from .transcribe import TranscribeTask, transcribe_tasks
 from .utils import (
-    TranskriptorError,
+    LjudanteckningError,
     detect_gpu_ids,
     normalize_path,
     require_bins,
@@ -42,7 +42,7 @@ app = typer.Typer(
 console = Console()
 log = logging.getLogger(__name__)
 
-TITLE = "transkriptor"
+TITLE = "ljudanteckning"
 TAGLINE = "Turn audio + video into searchable text."
 
 BANNER = r"""
@@ -130,7 +130,7 @@ def _parse_csv_ids(s: str) -> list[str]:
     ids = [x.strip() for x in s.split(",") if x.strip()]
     for x in ids:
         if not x.isdigit():
-            raise TranskriptorError(
+            raise LjudanteckningError(
                 f"Invalid GPU id '{x}'. Expected comma-separated integers like 0,1,2."
             )
     return ids
@@ -191,13 +191,13 @@ def run(
 
         p = normalize_path(path)
         if not p.exists():
-            raise TranskriptorError(f"Path does not exist: {p}")
+            raise LjudanteckningError(f"Path does not exist: {p}")
 
         print_banner()
 
         gpu_ids = _parse_csv_ids(settings.gpus) if settings.gpus else detect_gpu_ids()
         if not gpu_ids:
-            raise TranskriptorError("No GPUs detected. Check NVIDIA driver / nvidia-smi.")
+            raise LjudanteckningError("No GPUs detected. Check NVIDIA driver / nvidia-smi.")
 
         workers = settings.jobs if settings.jobs and settings.jobs > 0 else len(gpu_ids)
 
@@ -220,7 +220,7 @@ def run(
 
         media = discover_media(p, settings.exclude)
         if not media:
-            raise TranskriptorError("No files found (after filtering).")
+            raise LjudanteckningError("No files found (after filtering).")
 
         log.info("Discovered files (candidates): %d", len(media))
 
@@ -249,7 +249,7 @@ def run(
             log.info("Skipped %d files (no audio stream or zero duration).", bad)
 
         if valid == 0:
-            raise TranskriptorError("No valid media-with-audio files found.")
+            raise LjudanteckningError("No valid media-with-audio files found.")
 
         log.info("Valid media files: %d", valid)
         log.info("Total duration (valid): %.1f minutes", total_dur / 60.0)
@@ -295,7 +295,7 @@ def run(
             log.info("Chunks: %s -> %d", m.path.name, len(chunks))
 
         if not jobs_list:
-            raise TranskriptorError("No valid media jobs after chunking.")
+            raise LjudanteckningError("No valid media jobs after chunking.")
 
         log.info("Chunks queued for transcription: %d", len(transcribe_q))
 
@@ -344,7 +344,6 @@ def run(
                     language=final_lang,
                 )
 
-
             cleanup_workdir(wd, settings.cleanup)
             log.info("Exported: %s", media_path.name)
 
@@ -379,7 +378,7 @@ def run(
 
         log.info("Total chunks created/reused: %d", chunk_total)
 
-    except TranskriptorError as e:
+    except LjudanteckningError as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(code=2) from None
 
@@ -413,7 +412,7 @@ def show_config(
         console.print(f"write_txt = {s.write_txt}")
         console.print(f"cleanup = {s.cleanup}")
 
-    except TranskriptorError as e:
+    except LjudanteckningError as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(code=2) from None
 

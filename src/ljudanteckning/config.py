@@ -7,7 +7,7 @@ from pathlib import Path
 
 from platformdirs import user_config_dir
 
-from .utils import TranskriptorError, normalize_path
+from .utils import LjudanteckningError, normalize_path
 
 
 @dataclass(frozen=True)
@@ -18,7 +18,7 @@ class Settings:
     exclude: list[str] = field(default_factory=list)
 
     # temp
-    workdir_name: str = ".transkriptor"
+    workdir_name: str = ".ljudanteckning"
 
     # ffmpeg
     chunk_seconds: int = 600
@@ -48,11 +48,11 @@ class Settings:
 def default_config_paths() -> list[Path]:
     """
     INI search order (low -> high priority):
-      1) ~/.config/transkriptor/transkriptor.ini
-      2) ./transkriptor.ini
+      1) ~/.config/ljudanteckning/ljudanteckning.ini
+      2) ./ljudanteckning.ini
     """
-    xdg = Path(user_config_dir("transkriptor")) / "transkriptor.ini"
-    local = Path.cwd() / "transkriptor.ini"
+    xdg = Path(user_config_dir("ljudanteckning")) / "ljudanteckning.ini"
+    local = Path.cwd() / "ljudanteckning.ini"
     return [xdg, local]
 
 
@@ -89,13 +89,13 @@ def load_settings(explicit_config: Path | None) -> Settings:
             cp.getboolean(section, key, fallback=fallback) if cp.has_section(section) else fallback
         )
 
-    exclude = _split_csv(get("transkriptor", "exclude", ""))
+    exclude = _split_csv(get("ljudanteckning", "exclude", ""))
 
     s = Settings(
-        verbosity=getint("transkriptor", "verbosity", 1),
-        root=normalize_path(Path(get("transkriptor", "root", "."))),
+        verbosity=getint("ljudanteckning", "verbosity", 1),
+        root=normalize_path(Path(get("ljudanteckning", "root", "."))),
         exclude=exclude,
-        workdir_name=get("temp", "workdir_name", ".transkriptor"),
+        workdir_name=get("temp", "workdir_name", ".ljudanteckning"),
         chunk_seconds=getint("ffmpeg", "chunk_seconds", 600),
         sample_rate=getint("ffmpeg", "sample_rate", 16000),
         channels=getint("ffmpeg", "channels", 1),
@@ -130,23 +130,23 @@ def apply_overrides(s: Settings, **overrides) -> Settings:
 
 def validate_settings(s: Settings) -> None:
     if s.verbosity < 0 or s.verbosity > 2:
-        raise TranskriptorError("verbosity must be 0..2")
+        raise LjudanteckningError("verbosity must be 0..2")
 
     if s.chunk_seconds <= 0:
-        raise TranskriptorError("ffmpeg.chunk_seconds must be > 0")
+        raise LjudanteckningError("ffmpeg.chunk_seconds must be > 0")
 
     if s.sample_rate not in (8000, 12000, 16000, 22050, 24000, 44100, 48000):
         # keep it sane (whisper usually likes 16k)
-        raise TranskriptorError("ffmpeg.sample_rate looks invalid/unexpected")
+        raise LjudanteckningError("ffmpeg.sample_rate looks invalid/unexpected")
 
     if s.channels not in (1, 2):
-        raise TranskriptorError("ffmpeg.channels must be 1 or 2")
+        raise LjudanteckningError("ffmpeg.channels must be 1 or 2")
 
     if s.device != "cuda":
-        raise TranskriptorError("This project is GPU-first: whisper.device must be 'cuda'")
+        raise LjudanteckningError("This project is GPU-first: whisper.device must be 'cuda'")
 
     if s.beam_size < 1:
-        raise TranskriptorError("whisper.beam_size must be >= 1")
+        raise LjudanteckningError("whisper.beam_size must be >= 1")
 
     if s.cleanup not in ("none", "json", "all"):
-        raise TranskriptorError("output.cleanup must be one of: none|json|all")
+        raise LjudanteckningError("output.cleanup must be one of: none|json|all")

@@ -5,7 +5,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from .utils import TranskriptorError, run
+from .utils import LjudanteckningError, run
 
 
 @dataclass(frozen=True)
@@ -42,7 +42,7 @@ def ffprobe_info(path: Path) -> ProbeInfo:
     try:
         data = json.loads(p.stdout)
     except Exception as e:
-        raise TranskriptorError(f"ffprobe returned invalid JSON for {path}: {e!r}") from None
+        raise LjudanteckningError(f"ffprobe returned invalid JSON for {path}: {e!r}") from None
 
     fmt = data.get("format", {}) or {}
     dur_raw = fmt.get("duration", "0")

@@ -1,4 +1,4 @@
-# transkriptor
+# ljudanteckning
 
 Make your media library searchable: scan folders, split audio, transcribe in parallel across NVIDIA GPUs, then export subtitles and searchable text next to each original file.
 
@@ -20,7 +20,7 @@ Make your media library searchable: scan folders, split audio, transcribe in par
 
 ## Requirements
 
-Transkriptor is designed for **NVIDIA GPUs** and gets its best performance with **CUDA**.
+Ljudanteckning is designed for **NVIDIA GPUs** and gets its best performance with **CUDA**.
 If you have multiple GPUs available, it can run several transcription workers in parallel.
 
 ### Core requirements
@@ -48,16 +48,16 @@ If that command works and your GPUs show up, you’re ready to run GPU-accelerat
 Here’s what a real run looks like on a multi-GPU box: chunking with FFmpeg, parallel transcription workers, and live GPU telemetry.
 
 ### Multi-GPU transcription + live telemetry (the fun part)
-<img src="docs/screenshots/02-transcribing.png" width="900" alt="Transkriptor transcribing chunks across multiple NVIDIA GPUs with live telemetry." />
+<img src="docs/screenshots/02-transcribing.png" width="900" alt="Ljudanteckning transcribing chunks across multiple NVIDIA GPUs with live telemetry." />
 
 <details>
   <summary>More screenshots</summary>
 
   <p><strong>Chunking stage</strong></p>
-  <img src="docs/screenshots/01-chunking.png" width="900" alt="Transkriptor chunking audio using FFmpeg." />
+  <img src="docs/screenshots/01-chunking.png" width="900" alt="Ljudanteckning chunking audio using FFmpeg." />
 
   <p><strong>Finished outputs next to media</strong></p>
-  <img src="docs/screenshots/03-finished.png" width="900" alt="Transkriptor finished run showing exported subtitles and transcript files next to media." />
+  <img src="docs/screenshots/03-finished.png" width="900" alt="Ljudanteckning finished run showing exported subtitles and transcript files next to media." />
 </details>
 
 
@@ -74,8 +74,8 @@ sudo pacman -S --needed git ffmpeg python python-pip nvidia-utils
 nvidia-smi
 
 # 3) Clone + virtualenv + editable install
-git clone https://github.com/albinhenriksson/transkriptor.git
-cd transkriptor
+git clone https://github.com/albinhenriksson/ljudanteckning.git
+cd ljudanteckning
 
 python -m venv .venv
 source .venv/bin/activate.fish
@@ -83,7 +83,7 @@ source .venv/bin/activate.fish
 python -m pip install -U pip
 pip install -e ".[dev,nvml]"
 
-transkriptor --help
+ljudanteckning --help
 ```
 
 ### Debian / Ubuntu (bash)
@@ -97,8 +97,8 @@ sudo apt-get install -y git ffmpeg python3 python3-venv python3-pip
 nvidia-smi
 
 # 3) Clone + virtualenv + editable install
-git clone https://github.com/albinhenriksson/transkriptor.git
-cd transkriptor
+git clone https://github.com/albinhenriksson/ljudanteckning.git
+cd ljudanteckning
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -106,7 +106,7 @@ source .venv/bin/activate
 python -m pip install -U pip
 pip install -e ".[dev,nvml]"
 
-transkriptor --help
+ljudanteckning --help
 ```
 
 ### Fedora (bash)
@@ -119,8 +119,8 @@ sudo dnf install -y git ffmpeg python3 python3-pip
 nvidia-smi
 
 # 3) Clone + virtualenv + editable install
-git clone https://github.com/albinhenriksson/transkriptor.git
-cd transkriptor
+git clone https://github.com/albinhenriksson/ljudanteckning.git
+cd ljudanteckning
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -128,53 +128,53 @@ source .venv/bin/activate
 python -m pip install -U pip
 pip install -e ".[dev,nvml]"
 
-transkriptor --help
+ljudanteckning --help
 ```
 
 ## Quick start
 
 > Note: CLI flags shown below are implemented progressively while the pipeline is being built.
-> Run `transkriptor run --help` to see what’s available in your installed version.
+> Run `ljudanteckning run --help` to see what’s available in your installed version.
 
 ### 1) Create a local config (recommended)
 ```bash
-cp transkriptor.example.ini transkriptor.ini
+cp ljudanteckning.example.ini ljudanteckning.ini
 ```
 
-(Optional) sanity-check what Transkriptor will use:
+(Optional) sanity-check what Ljudanteckning will use:
 ```bash
-transkriptor config
+ljudanteckning config
 ```
 
 ### 2) Transcribe a single file
 ```bash
-transkriptor run --nocli "/mnt/media/Mr.Robot.S01E01.1080p.BluRay.mkv"
+ljudanteckning run --nocli "/mnt/media/Mr.Robot.S01E01.1080p.BluRay.mkv"
 ```
 
 ### 3) Transcribe an entire directory (recursive)
 ```bash
-transkriptor run --nocli "/mnt/media"
+ljudanteckning run --nocli "/mnt/media"
 ```
 
 ### 4) Pick GPUs explicitly (multi-GPU)
 Example with 4 GPUs:
 ```bash
-transkriptor run --nocli --gpus "0,1,2,3" --jobs 4 "/mnt/media"
+ljudanteckning run --nocli --gpus "0,1,2,3" --jobs 4 "/mnt/media"
 ```
 
 Example for an 11-GPU box:
 ```bash
-transkriptor run --nocli --gpus "0,1,2,3,4,5,6,7,8,9,10" --jobs 11 "/mnt/media"
+ljudanteckning run --nocli --gpus "0,1,2,3,4,5,6,7,8,9,10" --jobs 11 "/mnt/media"
 ```
 
 ### 5) Override model / language
 ```bash
-transkriptor run --nocli --model large-v3 --language sv "/mnt/media"
+ljudanteckning run --nocli --model large-v3 --language sv "/mnt/media"
 ```
 
 ## Outputs
 
-For each media file, Transkriptor writes transcript/subtitle files **next to the original**, e.g.:
+For each media file, Ljudanteckning writes transcript/subtitle files **next to the original**, e.g.:
 
 - `Movie.mkv`
 - `Movie.srt`
@@ -182,5 +182,5 @@ For each media file, Transkriptor writes transcript/subtitle files **next to the
 - `Movie.txt`
 - `Movie.whisper.json`
 
-Temporary chunks and per-chunk JSON are stored in a hidden work folder next to the file (by default: `.transkriptor/`)
+Temporary chunks and per-chunk JSON are stored in a hidden work folder next to the file (by default: `.ljudanteckning/`)
 and are cleaned up according to `output.cleanup` in your INI.

@@ -9,7 +9,7 @@ from time import time
 
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeElapsedColumn
 
-from .utils import TranskriptorError, normalize_path, require_bins
+from .utils import LjudanteckningError, normalize_path, require_bins
 
 __all__ = ["ChunkSpec", "workdir_for", "split_to_chunks", "cleanup_workdir"]
 
@@ -40,7 +40,7 @@ def _short_hash(s: str) -> str:
 def workdir_for(media_path: Path, workdir_name: str) -> Path:
     """
     Stable per-file workdir next to the media file:
-      <media_dir>/.transkriptor/<stem>__<ext>__<hash>/
+      <media_dir>/.ljudanteckning/<stem>__<ext>__<hash>/
     """
     media_path = normalize_path(media_path)
     base = media_path.parent / workdir_name
@@ -226,11 +226,11 @@ def split_to_chunks(
         rc = p.wait()
         if rc != 0:
             msg = stderr.strip() or "ffmpeg failed (no stderr captured)"
-            raise TranskriptorError(f"ffmpeg chunking failed for {media_path}:\n{msg}")
+            raise LjudanteckningError(f"ffmpeg chunking failed for {media_path}:\n{msg}")
 
     chunks = _existing_chunks(wd)
     if not chunks:
-        raise TranskriptorError(f"No chunks produced for {media_path} (workdir: {wd})")
+        raise LjudanteckningError(f"No chunks produced for {media_path} (workdir: {wd})")
 
     _write_meta(wd, want)
     return chunks

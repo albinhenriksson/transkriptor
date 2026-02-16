@@ -15,7 +15,7 @@ from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, T
 from rich.table import Table
 
 from .telemetry import get_gpu_stats, nvml_available
-from .utils import TranskriptorError
+from .utils import LjudanteckningError
 
 
 @dataclass(frozen=True)
@@ -118,7 +118,7 @@ def transcribe_tasks(
         return
 
     if not gpu_ids:
-        raise TranskriptorError("No GPUs available for transcription.")
+        raise LjudanteckningError("No GPUs available for transcription.")
 
     workers_n = min(max(1, jobs), len(gpu_ids))
 
@@ -239,12 +239,12 @@ def transcribe_tasks(
         p.join(timeout=2)
 
     if fatal:
-        raise TranskriptorError(f"Fatal worker error: {fatal}")
+        raise LjudanteckningError(f"Fatal worker error: {fatal}")
 
     if failed:
         tail = "\n".join(fail_details[:50])
         more = "" if len(fail_details) <= 50 else f"\n... ({len(fail_details) - 50} more)"
-        raise TranskriptorError(
+        raise LjudanteckningError(
             f"{failed} chunk(s) failed transcription.\n\n{tail}{more}\n\n"
             "Fix and rerun with --retranscribe."
         )

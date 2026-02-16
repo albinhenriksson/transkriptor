@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 
-class TranskriptorError(RuntimeError):
+class LjudanteckningError(RuntimeError):
     pass
 
 
@@ -16,7 +16,7 @@ def which(bin_name: str) -> str | None:
 def require_bins(*bins: str) -> None:
     missing = [b for b in bins if which(b) is None]
     if missing:
-        raise TranskriptorError(f"Missing required binaries in PATH: {', '.join(missing)}")
+        raise LjudanteckningError(f"Missing required binaries in PATH: {', '.join(missing)}")
 
 
 def run(cmd: list[str]) -> subprocess.CompletedProcess:

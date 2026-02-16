@@ -7,7 +7,7 @@ from pathlib import Path
 from .utils import normalize_path
 
 SKIP_DIR_NAMES = {
-    ".transkriptor",
+    ".ljudanteckning",
     ".git",
     ".venv",
     "__pycache__",

@@ -1,4 +1,4 @@
-from transkriptor.config import load_settings
+from ljudanteckning.config import load_settings
 
 
 def test_load_settings_no_files():

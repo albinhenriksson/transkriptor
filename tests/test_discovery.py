@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from transkriptor.media import discover_media
+from ljudanteckning.media import discover_media
 
 
 def test_discover_media_filters_exts(tmp_path: Path):
