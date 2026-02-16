@@ -113,3 +113,11 @@ def write_whisper_json(
         "segments": [{"start": s.start, "end": s.end, "text": s.text} for s in segments],
     }
     out_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def detect_language_from_chunks(workdir: Path) -> str | None:
+    for jf in sorted(workdir.glob("chunk_*.whisper.json")):
+        data = json.loads(jf.read_text(encoding="utf-8"))
+        lang = data.get("language")
+        if lang:
+            return str(lang)
+    return None

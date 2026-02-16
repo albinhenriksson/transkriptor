@@ -10,6 +10,7 @@ from rich.panel import Panel
 from .chunking import ChunkSpec, cleanup_workdir, split_to_chunks, workdir_for
 from .config import apply_overrides, load_settings
 from .export import (
+    detect_language_from_chunks,
     merge_chunks,
 )
 from .export import (
@@ -330,14 +331,19 @@ def run(
                 export_vtt(segments, out_base.with_suffix(".vtt"))
             if settings.write_txt:
                 export_txt(segments, out_base.with_suffix(".txt"))
+
+            det_lang = detect_language_from_chunks(wd)
+            final_lang = settings.language or det_lang
+
             if settings.write_json:
                 export_whisper_json(
                     segments,
                     out_base.with_suffix(".whisper.json"),
                     source=media_path,
                     model=settings.model,
-                    language=settings.language,
+                    language=final_lang,
                 )
+
 
             cleanup_workdir(wd, settings.cleanup)
             log.info("Exported: %s", media_path.name)
