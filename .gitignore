@@ -8,3 +8,10 @@ build/
 .ruff_cache/
 .mypy_cache/
 .ljudanteckning/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
